@@ -5,13 +5,22 @@ LastEditors: houhuixiang
 import _thread
 import time
 import sys
+import json
 import glog as log
 import logging
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 
-from geometry_msgs.msg import Twist
+# from geometry_msgs.msg import Twis
+from chassis_interfaces.srv import GetCurrentMapInfo
+from chassis_interfaces.msg import NaviPointCmd, PointCoordinate, NaviParam
+
+navi_point = '{"traceId": "123456789","method": "thing.service.downChannel","params": {"method": "deviceDataUpChannel","data": {"op": "publish","topic": "/navi_manager/navi_point","msg": {"map_id": "","point_id": "","point_type": "","coordinate": {"x": 0.0,"y": 0.0,"yaw": 0.0},"navi_param": {"is_forward": true,"is_final_rotate": false,"path_type": 1,"is_abs_reach": true, }}},"appCode": "FAVV9MVY"}, "version": "1.6.0"}'
+test = '{"traceId": "123456789"}'
+navi_point_json = json.loads(test)
+print(navi_point_json)
+# navi_point_json = json.loads(navi_point)
 
 
 def initLogging(logFilename, e):
@@ -42,44 +51,48 @@ class MoveGoGoGo(Node):
 
         log.setLevel("INFO")
 
-        self.cmd_vel = self.create_publisher(
-            Twist, '/cmd_vel', qos)
+        self.navi_point = self.create_publisher(
+            NaviPointCmd, '/navi_manager/navi_point', qos)
 
-    def pubCmdVel(self, x):
-        msg = Twist()
-        msg.linear.x = x
-        self.cmd_vel.publish(msg)
-        # log.info("pubCmdVel linear: %f" % x)
+        self.current_map = self.create_client(
+            GetCurrentMapInfo, '/map_manager/map/get_current_map')
+        self.req = GetCurrentMapInfo.Request()
 
+    def get_current_map(self):
+        self.future = self.current_map.call_async(self.req)
+        rclpy.spin_until_future_complete(self, self.future)
+        return self.future.result()
+
+    def pubNaviPoint(self, map_id, x, y, z, yaw):
+        msg = NaviPointCmd()
+        msg.map_id= map_id
+        coordinate = PointCoordinate()
+        coordinate.x = x
+        coordinate.y = y
+        coordinate.z = z
+        coordinate.yaw = yaw
+        msg.coordinate = coordinate
+        
+        navi_param = NaviParam()
+        navi_param.is_forward = True
+        navi_param.is_final_rotate=False
+        navi_param.path_type=1
+        navi_param.is_abs_reach=True
+        msg.navi_param = navi_param
+        
+        self.navi_point.publish(msg)
 
 def main(args=None):
     rclpy.init(args=args)
-    initLogging("pile_test.log", "info")
+    initLogging("movegogogo.log", "info")
 
     movegogogo = MoveGoGoGo()
+    
+    movegogogo.pubNaviPoint("map_id", 11.2, 12.1, 0.1, -0.2)
+    print("strat get current map")
+    response = movegogogo.get_current_map()
+    print("get current map id: %s" % response.map_id)
 
-    in_x = input("请输入移动速度: ")
-    in_t = input("请输入移动时间: ")
-    x = float(in_x)
-    t = int(in_t)
-    print("int_x: %f  int_t: %d" % (x, t))
-
-    i = t = t*5
-    count=0
-    while True:
-
-        if(i > 0):
-            movegogogo.pubCmdVel(x)
-            time.sleep(0.2)
-            i = i-1
-        elif(i > -t):
-            movegogogo.pubCmdVel(-x)
-            time.sleep(0.2)
-            i = i-1
-        else:
-            i = t
-            count = count+1
-            log.info("往返计数器： %d 次" % count)
     try:
         rclpy.spin(movegogogo)
     except KeyboardInterrupt:
