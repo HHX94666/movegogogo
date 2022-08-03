@@ -17,6 +17,7 @@ from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from chassis_interfaces.srv import GetCurrentMapInfo
 from chassis_interfaces.msg import NaviPointCmd, PointCoordinate, NaviParam, NaviWorkStatus
 
+
 def initLogging(logFilename, e):
 
     logging.basicConfig(
@@ -49,7 +50,7 @@ class MoveGoGoGo(Node):
             NaviPointCmd, '/navi_manager/navi_point', qos)
 
         self.navi_status = self.create_subscription(
-            NaviWorkStatus, '/navi_manager/state_publisher/work_status',self.getNaviStatus, qos)
+            NaviWorkStatus, '/navi_manager/state_publisher/work_status', self.getNaviStatus, qos)
 
         self.current_map = self.create_client(
             GetCurrentMapInfo, '/map_manager/map/get_current_map')
@@ -57,13 +58,12 @@ class MoveGoGoGo(Node):
         self.navigation_state = "idle"
         self.is_reached = False
 
-    def getNaviStatus(self,msg):
+    def getNaviStatus(self, msg):
         self.navigation_state = msg.navigation_state
-        if  self.navigation_state :
+        if self.navigation_state:
             log.info("navigation_state: %s" % self.navigation_state)
         if(self.navigation_state == "reached"):
             self.is_reached = True
-
 
     def getCurrentMap(self):
         self.future = self.current_map.call_async(self.req)
@@ -72,39 +72,43 @@ class MoveGoGoGo(Node):
 
     def pubNaviPoint(self, map_id, x, y, z, yaw):
         msg = NaviPointCmd()
-        msg.map_id= map_id
+        msg.map_id = map_id
         coordinate = PointCoordinate()
         coordinate.x = x
         coordinate.y = y
         coordinate.z = z
         coordinate.yaw = yaw
         msg.coordinate = coordinate
-        
+
         navi_param = NaviParam()
         navi_param.is_forward = True
-        navi_param.is_final_rotate=False
-        navi_param.path_type=1
-        navi_param.is_abs_reach=True
+        navi_param.is_final_rotate = False
+        navi_param.path_type = 1
+        navi_param.is_abs_reach = True
         msg.navi_param = navi_param
-        
+
         self.navi_point.publish(msg)
 
-def myThread(move,map_id, x, y, z, yaw, x2, y2, z2, yaw2):
+
+def myThread(move, map_id='0e8f475e-9d1f-49ff-a01c-fe42f51120fb', x=-0.638, y=-0.0128, z=0, yaw=0.184771, x2=2.461, y2=0.247, z2=0, yaw2=0.0377):
     movegogogo = move
     run_count = 0
     while True:
-        log.info("前往第一个点")
-        movegogogo.pubNaviPoint(map_id, float(x), float(y), float(z), float(yaw))
+        log.info("前往起点")
+        movegogogo.pubNaviPoint(map_id, float(
+            x), float(y), float(z), float(yaw))
         while movegogogo.is_reached != True:
             time.sleep(2)
         movegogogo.is_reached = False
-        log.info("前往第二个点")
-        movegogogo.pubNaviPoint(map_id, float(x2), float(y2), float(z2), float(yaw2))
+        log.info("前往终点")
+        movegogogo.pubNaviPoint(map_id, float(
+            x2), float(y2), float(z2), float(yaw2))
         while movegogogo.is_reached != True:
             time.sleep(2)
         movegogogo.is_reached = False
         run_count = run_count+1
-        log.info("来回次数总计： %d 次"% run_count)
+        log.info("来回次数总计： %d 次" % run_count)
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -126,9 +130,8 @@ def main(args=None):
     z2 = input("请输入第二个点z: ")
     yaw2 = input("请输入第二个点yaw: ")
 
-    
-    _thread.start_new_thread(myThread,(movegogogo,map_id,x,y,z,yaw,x2,y2,z2,yaw2))
-    
+    _thread.start_new_thread(
+        myThread, (movegogogo, map_id, x, y, z, yaw, x2, y2, z2, yaw2))
 
     try:
         rclpy.spin(movegogogo)
