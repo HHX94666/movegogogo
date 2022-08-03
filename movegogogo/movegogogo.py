@@ -119,19 +119,19 @@ def main(args=None):
     # response = movegogogo.get_current_map()
     # print("get current map id: %s" % response.map_id)
 
-    map_id = input("请输入map_id: ")
-    x = input("请输入x: ")
-    y = input("请输入y: ")
-    z = input("请输入z: ")
-    yaw = input("请输入yaw: ")
+    # map_id = input("请输入map_id: ")
+    # x = input("请输入x: ")
+    # y = input("请输入y: ")
+    # z = input("请输入z: ")
+    # yaw = input("请输入yaw: ")
 
-    x2 = input("请输入第二个点x: ")
-    y2 = input("请输入第二个点y: ")
-    z2 = input("请输入第二个点z: ")
-    yaw2 = input("请输入第二个点yaw: ")
+    # x2 = input("请输入第二个点x: ")
+    # y2 = input("请输入第二个点y: ")
+    # z2 = input("请输入第二个点z: ")
+    # yaw2 = input("请输入第二个点yaw: ")
 
     _thread.start_new_thread(
-        myThread, (movegogogo, map_id, x, y, z, yaw, x2, y2, z2, yaw2))
+        myThread, (movegogogo))
 
     try:
         rclpy.spin(movegogogo)
