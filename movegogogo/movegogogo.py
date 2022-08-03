@@ -90,7 +90,7 @@ class MoveGoGoGo(Node):
         self.navi_point.publish(msg)
 
 
-def myThread(move, map_id='0e8f475e-9d1f-49ff-a01c-fe42f51120fb', x=-0.638, y=-0.0128, z=0, yaw=0.184771, x2=2.461, y2=0.247, z2=0, yaw2=0.0377):
+def myThread(move, map_id='0e8f475e-9d1f-49ff-a01c-fe42f51120fb', x='-0.638', y='-0.0128', z='0', yaw='0.184771', x2='2.461', y2='0.247', z2='0', yaw2='0.0377'):
     movegogogo = move
     run_count = 0
     while True:
@@ -119,19 +119,19 @@ def main(args=None):
     # response = movegogogo.get_current_map()
     # print("get current map id: %s" % response.map_id)
 
-    # map_id = input("请输入map_id: ")
-    # x = input("请输入x: ")
-    # y = input("请输入y: ")
-    # z = input("请输入z: ")
-    # yaw = input("请输入yaw: ")
+    map_id = input("请输入map_id: ")
+    x = input("请输入x: ")
+    y = input("请输入y: ")
+    z = input("请输入z: ")
+    yaw = input("请输入yaw: ")
 
-    # x2 = input("请输入第二个点x: ")
-    # y2 = input("请输入第二个点y: ")
-    # z2 = input("请输入第二个点z: ")
-    # yaw2 = input("请输入第二个点yaw: ")
+    x2 = input("请输入第二个点x: ")
+    y2 = input("请输入第二个点y: ")
+    z2 = input("请输入第二个点z: ")
+    yaw2 = input("请输入第二个点yaw: ")
 
     _thread.start_new_thread(
-        myThread, (movegogogo))
+        myThread, (movegogogo, map_id, x, y, z, yaw, x2, y2, z2, yaw2))
 
     try:
         rclpy.spin(movegogogo)
